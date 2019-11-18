@@ -1,0 +1,17 @@
+version: '3'
+services:
+  AkkaServer:
+    build: ./AkkaServer
+    network_mode: host
+    ports:
+      - "8080:8080"
+    restart: on-failure
+
+  Client:
+    build: ./Client
+    network_mode: host
+    depends_on:
+      - "AkkaServer"
+    ports:
+      - "8081:8081"
+    restart: on-failure
