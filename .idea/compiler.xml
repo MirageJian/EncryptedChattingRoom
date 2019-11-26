@@ -19,6 +19,7 @@
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="AkkaServer" options="-parameters" />
       <module name="Cilent" options="-parameters" />
       <module name="Client" options="-parameters" />
       <module name="client" options="-parameters" />

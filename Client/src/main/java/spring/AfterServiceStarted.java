@@ -1,7 +1,6 @@
 package spring;
 
-import models.CurrentSession;
-import org.json.simple.JSONArray;
+import akka.actor.typed.ActorSystem;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,8 +19,11 @@ import java.util.Map;
 
 @Component
 public class AfterServiceStarted implements ApplicationRunner {
-    public static Map<String, String> sCurrent;
+    public static final String SERVER_IP = "http://127.0.0.1";
+    public static final String SERVER_ONLINE_API = SERVER_IP + ":8888/online";
     private static final String CLIENT_INFO_PATH = "ClientInfo.json";
+    public static Map<String, String> sCurrent;
+    public static ActorSystem akkaSystem;
     /**
      * 会在服务启动完成后立即执行
      */
@@ -38,25 +40,25 @@ public class AfterServiceStarted implements ApplicationRunner {
             currentJson = (JSONObject) jsonParser.parse(reader);
         }
         if (currentJson == null) {
-            // TODO use json storage read pair, if there is no pair generate
+            // Use json storage read pair, if there is no pair generate
             AbstractMap.SimpleEntry<String, String> personalPair = SimpleEncryption.generatePair();
             sCurrent = new HashMap<>();
             sCurrent.put("name", "Mike");
             sCurrent.put("publicKey", personalPair.getKey());
             sCurrent.put("privateKey", personalPair.getValue());
             currentJson = new JSONObject(sCurrent);
-//        JSONArray messages = new JSONArray();
-//        messages.add("Hey!");
-//        messages.add("What's up?!");
-//        sampleObject.put("messages", messages);
             Files.write(Paths.get(CLIENT_INFO_PATH), currentJson.toJSONString().getBytes());
         } else {
             sCurrent = new HashMap<String, String>(currentJson);
         }
+        // Tell server this client is online
+        HttpEntity<Map<String, String>> request = new HttpEntity<>(sCurrent);
+        new RestTemplate().postForObject(SERVER_ONLINE_API, request, String.class);
+//        JSONArray messages = new JSONArray();
+//        messages.add("Hey!");
+//        messages.add("What's up?!");
+//        sampleObject.put("messages", messages);
 
-        // TODO Use akka tell server this client online
-
-//        HttpEntity<String> request = new HttpEntity<>(String.format("http://localhost:%s", port));
-//        new RestTemplate().postForObject("http://localhost:8080/hosts", request, String.class);
+//        new RestTemplate().delete(SERVER_IP + "?publicKey=" + sCurrent.get("publicKey"));
     }
 }

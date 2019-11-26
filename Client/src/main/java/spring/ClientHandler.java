@@ -1,11 +1,9 @@
 package spring;
 
-import core.ClientApplication;
-import core.ClientInfo;
-import core.Quotation;
 import models.MessageBlock;
-import models.NameAndKey;
-import org.springframework.http.HttpEntity;
+import models.UserSession;
+import org.json.simple.JSONArray;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
@@ -18,15 +16,14 @@ public class ClientHandler {
 	public ClientHandler() {}
 	// Get list of people
 	@RequestMapping(value = "/people", method = RequestMethod.GET)
-	public ArrayList<NameAndKey> listPeople() {
-		// TODO Get from akka
-		return new ArrayList<>();
+	public String getServer() {
+		return AfterServiceStarted.SERVER_ONLINE_API;
 	}
 	// Room resource
 	@RequestMapping(value = "/rooms", method = RequestMethod.GET)
-	public NameAndKey[] getRooms() {
-		// TODO Get from json file
-		return new NameAndKey[2];
+	public UserSession[] getRooms() {
+		// TODO Get collections from MongoBD
+		return new UserSession[2];
 	}
 	@RequestMapping(value = "/rooms", method = RequestMethod.POST)
 	public HashMap<String, String> createRoom(@RequestBody List<String> peoplePublicKeys) {
@@ -40,22 +37,20 @@ public class ClientHandler {
 			String encryptedPrivateRoomKey = SimpleEncryption.encryptString(roomPair.getKey(), roomPair.getValue());
 			initMessage.put(ppk, encryptedPrivateRoomKey);
 		}
-		// TODO Store on the local
-		// TODO Interact with akka
+		// TODO Store on the local Interact with akka (Encrypt and MongoDB)
 		return initMessage;
 	}
 	// Messages resource
 	@RequestMapping(value = "/messages", method = RequestMethod.GET)
-	public MessageBlock[] getMessages() {
-		// TODO Get from json file
+	public MessageBlock[] getMessages(@RequestParam String publicKey) {
+		// TODO Get records from MongoBD
 		return new MessageBlock[2];
 	}
 	@RequestMapping(value = "/messages", method = RequestMethod.POST)
 	public MessageBlock createMessage(@RequestBody String content, String roomPublicKey) {
 		MessageBlock messageBlock = new MessageBlock(AfterServiceStarted.sCurrent.get("publicKey"), content, new Date());
 		String encryptMessage = SimpleEncryption.encryptMessageBlock(roomPublicKey, messageBlock);
-		// TODO Store on the local
-		// TODO Interact with akka
+		// TODO Store on the local Interact with akka (Encrypt and MongoDB)
 		return messageBlock;
 	}
 }

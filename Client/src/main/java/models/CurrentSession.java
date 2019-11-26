@@ -2,9 +2,9 @@ package models;
 
 import java.util.HashMap;
 
-public class CurrentSession extends NameAndKey {
-    public CurrentSession(String name, String publicKey, String privateKey) {
-        super(name, publicKey);
+public class CurrentSession extends UserSession {
+    public CurrentSession(String name, String publicKey, String privateKey, String ip) {
+        super(name, publicKey, ip);
         this.privateKey = privateKey;
     }
 
