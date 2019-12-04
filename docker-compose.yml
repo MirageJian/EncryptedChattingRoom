@@ -1,5 +1,8 @@
 version: '3'
 services:
+  NginxServer:
+    build: ./NginxServer
+
   AkkaServer:
     build: ./AkkaServer
     network_mode: host

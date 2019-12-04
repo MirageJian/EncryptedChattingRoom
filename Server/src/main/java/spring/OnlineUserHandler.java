@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 
+@RestController
 public class OnlineUserHandler {
     private static ArrayList<UserSession> sOnlineUsers = new ArrayList<>();
     // Get list of online

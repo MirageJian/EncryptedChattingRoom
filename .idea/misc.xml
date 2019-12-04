@@ -8,6 +8,7 @@
         <option value="$PROJECT_DIR$/AkkaServer/pom.xml" />
         <option value="$PROJECT_DIR$/broker/pom.xml" />
         <option value="$PROJECT_DIR$/Client/pom.xml" />
+        <option value="$PROJECT_DIR$/Server/pom.xml" />
       </list>
     </option>
   </component>

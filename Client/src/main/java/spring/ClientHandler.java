@@ -1,11 +1,15 @@
 package spring;
 
-import models.MessageBlock;
-import models.UserSession;
-import org.json.simple.JSONArray;
-import org.springframework.http.ResponseEntity;
+import com.mongodb.MongoClient;
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Sorts;
+import com.mongodb.util.JSON;
+import models.*;
+import org.bson.Document;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
 /**
@@ -13,44 +17,101 @@ import java.util.*;
  */
 @RestController
 public class ClientHandler {
-	public ClientHandler() {}
+	private MongoClient mongoClient;
+	private MongoDatabase database;
+	public ClientHandler() {
+		mongoClient = new MongoClient("localhost");
+		database = mongoClient.getDatabase("chatting_room");
+	}
 	// Get list of people
-	@RequestMapping(value = "/people", method = RequestMethod.GET)
-	public String getServer() {
-		return AfterServiceStarted.SERVER_ONLINE_API;
+	@RequestMapping(value = "/", method = RequestMethod.GET)
+	public HashMap<String, Object> getServer() {
+	    HashMap<String, Object> map = new HashMap<>();
+	    map.put("onlineApi", AfterServiceStarted.SERVER_ONLINE_API);
+	    map.put("session", AfterServiceStarted.sCurrent);
+		return map;
 	}
 	// Room resource
 	@RequestMapping(value = "/rooms", method = RequestMethod.GET)
-	public UserSession[] getRooms() {
-		// TODO Get collections from MongoBD
-		return new UserSession[2];
+	public List<Map<String, Object>> getRooms() {
+		// Get collections from MongoBD
+		List<Map<String, Object>> rooms = new LinkedList<>();
+		for (String name : database.listCollectionNames()) {
+			MongoCollection<Document> collection = database.getCollection(name);
+			// Find First
+			FindIterable<Document> finder = collection.find();
+			Map<String, Object> room = finder.first();
+			Document message = collection.find(Filters.exists("isInitial", false))
+					.sort(Sorts.descending("datetime"))
+					.first();
+			if (message != null) {
+				// Decrypt Room private key with personal private Key
+				String roomPrivateKey = SimpleEncryption.decryptString(
+						AfterServiceStarted.sCurrent.get("privateKey"),
+						(String)room.get(AfterServiceStarted.sCurrent.get("publicKey"))
+				);
+				// Decrypt Message with room private key
+				Document decryptedData = SimpleEncryption.decryptMessage(roomPrivateKey, (String)message.get("encryptedData"));
+				room.put("recentMessage", decryptedData.get("content"));
+				room.put("recentDate", decryptedData.get("datetime"));
+			}
+			if (room != null){
+                room.remove("_id");
+                rooms.add(room);
+            }
+		}
+		return rooms;
 	}
+	// Get rooms list
+	@RequestMapping(value = "/rooms", method = RequestMethod.GET, params = "publicKey")
+	public Document getRoom(@RequestParam String publicKey) {
+		MongoCollection<Document> collection = database.getCollection(publicKey);
+		Document doc = collection.find().first();
+		// JSON to object for getting room participants
+		doc.replace("participants", JSON.parse((String) doc.get("participants")));
+		doc.remove("_id");
+		return doc;
+	}
+	// Delete chatting room
+	@RequestMapping(value = "/rooms", method = RequestMethod.DELETE, params = "publicKey")
+	public void deleteRoom(@RequestParam String publicKey) {
+		MongoCollection<Document> collection = database.getCollection(publicKey);
+		// When delete all documents, the collection will be delete.
+        collection.drop();
+	}
+	/** This Message Will receive by everyone in group */
 	@RequestMapping(value = "/rooms", method = RequestMethod.POST)
-	public HashMap<String, String> createRoom(@RequestBody List<String> peoplePublicKeys) {
-		HashMap<String, String> initMessage = new HashMap<>();
+	public Map<String, Object> createRoom(@RequestBody RoomModel input) {
+		Document initMessage = new Document();
 		AbstractMap.SimpleEntry<String, String> roomPair = SimpleEncryption.generatePair();
 		// Put room info and current session info
-		initMessage.put(roomPair.getKey(), null);
-		peoplePublicKeys.add(AfterServiceStarted.sCurrent.get("publicKey"));
-		// Encrypt private key
-		for (String ppk : peoplePublicKeys) {
-			String encryptedPrivateRoomKey = SimpleEncryption.encryptString(roomPair.getKey(), roomPair.getValue());
-			initMessage.put(ppk, encryptedPrivateRoomKey);
+		initMessage.append("isInitial", true);
+		initMessage.append("publicKey", roomPair.getKey());
+		initMessage.append("name", input.name);
+		initMessage.append("img", input.img);
+		// Add client into participate
+		ParticipantModel client = new ParticipantModel(
+				AfterServiceStarted.sCurrent.get("name"),
+				AfterServiceStarted.sCurrent.get("publicKey"),
+				AfterServiceStarted.sCurrent.get("ip")
+		);
+		input.participants.add(client);
+		List<Document> participants = new LinkedList<>();
+		// Encrypt private key of room
+		for (ParticipantModel p : input.participants) {
+			String roomPrivateKey = SimpleEncryption.encryptString(p.publicKey, roomPair.getValue());
+			initMessage.append(p.publicKey, roomPrivateKey);
+			// To JSON data
+            Document doc = new Document();
+            doc.put("name", p.name);
+            doc.put("publicKey", p.publicKey);
+            doc.put("ip", p.ip);
+			participants.add(doc);
 		}
-		// TODO Store on the local Interact with akka (Encrypt and MongoDB)
+		initMessage.append("participants", JSON.serialize(participants));
+		// Store on the local Interact with akka (Encrypt and MongoDB)
+		MongoCollection<Document> collection = database.getCollection(roomPair.getKey());
+		collection.insertOne(initMessage);
 		return initMessage;
-	}
-	// Messages resource
-	@RequestMapping(value = "/messages", method = RequestMethod.GET)
-	public MessageBlock[] getMessages(@RequestParam String publicKey) {
-		// TODO Get records from MongoBD
-		return new MessageBlock[2];
-	}
-	@RequestMapping(value = "/messages", method = RequestMethod.POST)
-	public MessageBlock createMessage(@RequestBody String content, String roomPublicKey) {
-		MessageBlock messageBlock = new MessageBlock(AfterServiceStarted.sCurrent.get("publicKey"), content, new Date());
-		String encryptMessage = SimpleEncryption.encryptMessageBlock(roomPublicKey, messageBlock);
-		// TODO Store on the local Interact with akka (Encrypt and MongoDB)
-		return messageBlock;
 	}
 }
