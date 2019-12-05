@@ -1,4 +1,5 @@
-/NginxServer/dist
+
 /Client/target
-/AkkaServer/target
+/Client1/target
+/Server/target
 ClientInfo.json

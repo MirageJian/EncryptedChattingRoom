@@ -20,7 +20,7 @@ public class ClientHandler {
 	private MongoClient mongoClient;
 	private MongoDatabase database;
 	public ClientHandler() {
-		mongoClient = new MongoClient("localhost");
+		mongoClient = new MongoClient("localhost", 27017);
 		database = mongoClient.getDatabase("chatting_room");
 	}
 	// Get list of people

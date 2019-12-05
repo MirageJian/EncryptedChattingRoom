@@ -1,20 +1,41 @@
 version: '3'
 services:
-  NginxServer:
+  nginx_server:
     build: ./NginxServer
+    restart: always
+    network_mode: host
+    ports:
+      - "80:80"
 
-  AkkaServer:
-    build: ./AkkaServer
+  mongo:
+    image: mongo
+    restart: always
+    network_mode: host
+    ports:
+      - "27017:27017"
+
+  server:
+    build: ./Server
+    network_mode: host
+    ports:
+      - "8888:8888"
+
+  client:
+    depends_on:
+      - "server"
+      - "nginx_server"
+      - "mongo"
+    build: ./Client
     network_mode: host
     ports:
       - "8080:8080"
-    restart: on-failure
 
-  Client:
+  client1:
+    depends_on:
+      - "server"
+      - "nginx_server"
+      - "mongo"
     build: ./Client
     network_mode: host
-    depends_on:
-      - "AkkaServer"
     ports:
       - "8081:8081"
-    restart: on-failure

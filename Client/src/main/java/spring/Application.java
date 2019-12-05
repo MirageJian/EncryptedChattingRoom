@@ -23,9 +23,9 @@ public class Application {
     // Open browser for chatting room
     @EventListener({ApplicationReadyEvent.class})
     public void applicationReadyEvent() {
-        System.out.println("Application started ... launching browser now");
-        // TODO uncomment
-//        browse(AfterServiceStarted.SERVER_IP);
+        System.out.println(String.format("Application started ... Opening http://%s?local=%s:8080", AfterServiceStarted.SERVER_IP, AfterServiceStarted.SERVER_IP));
+        // Tip open browser
+        // browse(AfterServiceStarted.SERVER_IP);
     }
 
     public static void browse(String url) {
