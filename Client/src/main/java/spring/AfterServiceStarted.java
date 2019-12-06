@@ -19,8 +19,8 @@ import java.util.Map;
 
 @Component
 public class AfterServiceStarted implements ApplicationRunner {
-//    public static final String SERVER_IP = "http://localhost";
-    public static final String SERVER_IP = "192.168.99.100";
+    public static final String SERVER_IP = "localhost";
+//    public static final String SERVER_IP = "192.168.99.100";
     public static final String SERVER_ONLINE_API = "http://" + SERVER_IP + ":8888/online";
     private static final String CLIENT_INFO_PATH = "ClientInfo.json";
     public static Map<String, String> sCurrent;
