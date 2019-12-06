@@ -28,14 +28,14 @@ services:
     build: ./Client
     network_mode: host
     ports:
-      - "8080:8080"
+      - "8081:8081"
 
   client1:
     depends_on:
       - "server"
       - "nginx_server"
       - "mongo"
-    build: ./Client
+    build: ./Client1
     network_mode: host
     ports:
       - "8081:8081"

@@ -40,10 +40,14 @@ public class ClientHandler {
 			MongoCollection<Document> collection = database.getCollection(name);
 			// Find First
 			FindIterable<Document> finder = collection.find();
-			Map<String, Object> room = finder.first();
+			Map<String, Object> room = finder.filter(Filters.exists(AfterServiceStarted.sCurrent.get("publicKey"), true))
+					.first();
+			// No room for this user
+			if (room == null) continue;
 			Document message = collection.find(Filters.exists("isInitial", false))
 					.sort(Sorts.descending("datetime"))
 					.first();
+			// If no last message
 			if (message != null) {
 				// Decrypt Room private key with personal private Key
 				String roomPrivateKey = SimpleEncryption.decryptString(
@@ -55,10 +59,8 @@ public class ClientHandler {
 				room.put("recentMessage", decryptedData.get("content"));
 				room.put("recentDate", decryptedData.get("datetime"));
 			}
-			if (room != null){
-                room.remove("_id");
-                rooms.add(room);
-            }
+			room.remove("_id");
+			rooms.add(room);
 		}
 		return rooms;
 	}

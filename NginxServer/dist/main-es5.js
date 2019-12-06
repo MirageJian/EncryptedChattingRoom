@@ -1,13 +1,3 @@
-var __values = (this && this.__values) || function (o) {
-    var m = typeof Symbol === "function" && o[Symbol.iterator], i = 0;
-    if (m) return m.call(o);
-    return {
-        next: function () {
-            if (o && i >= o.length) o = void 0;
-            return { value: o && o[i++], done: !o };
-        }
-    };
-};
 (window["webpackJsonp"] = window["webpackJsonp"] || []).push([["main"], {
         /***/ "./$$_lazy_route_resource lazy recursive": 
         /*!******************************************************!*\
@@ -746,9 +736,11 @@ var __values = (this && this.__values) || function (o) {
                     fr.readAsDataURL(file);
                 };
                 CreateDialogComponent.prototype.submit = function () {
+                    var _this = this;
                     this.input.participants = this.peopleSelection.selectedOptions.selected.map(function (o) { return o.value; });
-                    this.messageService.createRoom(this.input);
-                    this.dialogRef.close();
+                    this.messageService.createRoom(this.input).subscribe(function () {
+                        _this.dialogRef.close();
+                    });
                 };
                 return CreateDialogComponent;
             }());
@@ -888,45 +880,36 @@ var __values = (this && this.__values) || function (o) {
                     return this.http.delete(_login_service__WEBPACK_IMPORTED_MODULE_3__["LoginService"].CLIENT_AD + 'rooms', { params: httpParam });
                 };
                 MessageService.prototype.createRoom = function (input) {
-                    var e_1, _a;
-                    var _this = this;
                     var ob = this.http.post(_login_service__WEBPACK_IMPORTED_MODULE_3__["LoginService"].CLIENT_AD + 'rooms', input);
-                    var _loop_1 = function (p) {
-                        if (p.publicKey !== _login_service__WEBPACK_IMPORTED_MODULE_3__["LoginService"].sSession.publicKey) {
-                            var url_1 = 'http://' + p.ip + '/';
-                            // Construct the http
-                            ob = ob.pipe(Object(rxjs_operators__WEBPACK_IMPORTED_MODULE_4__["switchMap"])(function () { return _this.http.post(url_1 + 'rooms', input); }));
-                        }
-                    };
-                    try {
-                        // Notify others in the group
-                        for (var _b = __values(input.participants), _c = _b.next(); !_c.done; _c = _b.next()) {
-                            var p = _c.value;
-                            _loop_1(p);
-                        }
-                    }
-                    catch (e_1_1) { e_1 = { error: e_1_1 }; }
-                    finally {
-                        try {
-                            if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
-                        }
-                        finally { if (e_1) throw e_1.error; }
-                    }
+                    // Notify others in the group
+                    // for (const p of input.participants) {
+                    //   if (p.publicKey !== LoginService.sSession.publicKey) {
+                    //     const url = 'http://' + p.ip + '/';
+                    //     // Construct the http
+                    //     ob = ob.pipe(switchMap(() => this.http.post( url + 'rooms', input)));
+                    //   }
+                    // }
                     return ob;
                 };
                 MessageService.prototype.sendMessage = function (message, room) {
                     var _this = this;
                     var httpParam = new _angular_common_http__WEBPACK_IMPORTED_MODULE_2__["HttpParams"]();
                     httpParam = httpParam.append('publicKey', room.publicKey);
+                    // Encrypt first
                     this.http.post(_login_service__WEBPACK_IMPORTED_MODULE_3__["LoginService"].CLIENT_AD + 'messages', message).pipe(Object(rxjs_operators__WEBPACK_IMPORTED_MODULE_4__["switchMap"])(function (result) {
                         message = result;
-                        return _this.http.post(_login_service__WEBPACK_IMPORTED_MODULE_3__["LoginService"].CLIENT_AD + 'receiveMessage', result, { params: httpParam });
+                        // use Encrypt data to notify others
+                        var ob = _this.http.post(_login_service__WEBPACK_IMPORTED_MODULE_3__["LoginService"].CLIENT_AD + 'receiveMessage', result, { params: httpParam });
+                        // Loop to notify others
+                        // for (const p of room.participants) {
+                        //   if (p.publicKey !== LoginService.sSession.publicKey) {
+                        //     const url = 'http://' + p.ip + '/';
+                        //     ob = ob.pipe(switchMap(() => this.http.post(url + 'receiveMessage', result, {params: httpParam}));
+                        //   }
+                        // }
+                        return ob;
                     })).subscribe();
                     // TODO p.ip filter user in the group
-                    // for (const p of room.participants) {
-                    //   if (p.publicKey !== LoginService.sSession.publicKey) {
-                    //   }
-                    // }
                 };
                 return MessageService;
             }());

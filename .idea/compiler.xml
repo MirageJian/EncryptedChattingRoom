@@ -7,8 +7,8 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="Server" />
-        <module name="Client1" />
         <module name="Client" />
+        <module name="Client1" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>

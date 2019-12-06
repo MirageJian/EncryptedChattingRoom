@@ -734,8 +734,9 @@ let CreateDialogComponent = class CreateDialogComponent {
     }
     submit() {
         this.input.participants = this.peopleSelection.selectedOptions.selected.map((o) => o.value);
-        this.messageService.createRoom(this.input);
-        this.dialogRef.close();
+        this.messageService.createRoom(this.input).subscribe(() => {
+            this.dialogRef.close();
+        });
     }
 };
 CreateDialogComponent.ctorParameters = () => [
@@ -892,27 +893,33 @@ let MessageService = class MessageService {
     createRoom(input) {
         let ob = this.http.post(_login_service__WEBPACK_IMPORTED_MODULE_3__["LoginService"].CLIENT_AD + 'rooms', input);
         // Notify others in the group
-        for (const p of input.participants) {
-            if (p.publicKey !== _login_service__WEBPACK_IMPORTED_MODULE_3__["LoginService"].sSession.publicKey) {
-                const url = 'http://' + p.ip + '/';
-                // Construct the http
-                ob = ob.pipe(Object(rxjs_operators__WEBPACK_IMPORTED_MODULE_4__["switchMap"])(() => this.http.post(url + 'rooms', input)));
-            }
-        }
+        // for (const p of input.participants) {
+        //   if (p.publicKey !== LoginService.sSession.publicKey) {
+        //     const url = 'http://' + p.ip + '/';
+        //     // Construct the http
+        //     ob = ob.pipe(switchMap(() => this.http.post( url + 'rooms', input)));
+        //   }
+        // }
         return ob;
     }
     sendMessage(message, room) {
         let httpParam = new _angular_common_http__WEBPACK_IMPORTED_MODULE_2__["HttpParams"]();
         httpParam = httpParam.append('publicKey', room.publicKey);
+        // Encrypt first
         this.http.post(_login_service__WEBPACK_IMPORTED_MODULE_3__["LoginService"].CLIENT_AD + 'messages', message).pipe(Object(rxjs_operators__WEBPACK_IMPORTED_MODULE_4__["switchMap"])((result) => {
             message = result;
-            return this.http.post(_login_service__WEBPACK_IMPORTED_MODULE_3__["LoginService"].CLIENT_AD + 'receiveMessage', result, { params: httpParam });
+            // use Encrypt data to notify others
+            let ob = this.http.post(_login_service__WEBPACK_IMPORTED_MODULE_3__["LoginService"].CLIENT_AD + 'receiveMessage', result, { params: httpParam });
+            // Loop to notify others
+            // for (const p of room.participants) {
+            //   if (p.publicKey !== LoginService.sSession.publicKey) {
+            //     const url = 'http://' + p.ip + '/';
+            //     ob = ob.pipe(switchMap(() => this.http.post(url + 'receiveMessage', result, {params: httpParam}));
+            //   }
+            // }
+            return ob;
         })).subscribe();
         // TODO p.ip filter user in the group
-        // for (const p of room.participants) {
-        //   if (p.publicKey !== LoginService.sSession.publicKey) {
-        //   }
-        // }
     }
 };
 MessageService.ctorParameters = () => [
