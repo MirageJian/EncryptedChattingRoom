@@ -1,7 +1,9 @@
 version: '3'
 services:
-  nginx_server:
-    build: ./NginxServer
+  nginx:
+    image: nginx
+    volumes:
+      - ./NginxServer/dist:/usr/share/nginx/html
     restart: always
     network_mode: host
     ports:
@@ -23,7 +25,7 @@ services:
   client:
     depends_on:
       - "server"
-      - "nginx_server"
+      - "nginx"
       - "mongo"
     build: ./Client
     network_mode: host
@@ -33,7 +35,7 @@ services:
   client1:
     depends_on:
       - "server"
-      - "nginx_server"
+      - "nginx"
       - "mongo"
     build: ./Client1
     network_mode: host
